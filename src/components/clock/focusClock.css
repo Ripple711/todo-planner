@@ -1,0 +1,374 @@
+.focus-clock-page {
+  align-items: center;
+  color: #33322d;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 5.05rem);
+  padding: clamp(1.25rem, 3.2vw, 3.5rem);
+}
+
+.focus-clock-panel {
+  align-items: center;
+  display: grid;
+  gap: clamp(1.1rem, 2.6vw, 2.25rem);
+  justify-items: center;
+  max-width: min(1180px, 100%);
+  padding: 0;
+  width: 100%;
+}
+
+.focus-clock-quote {
+  display: grid;
+  gap: 0.42rem;
+  justify-items: center;
+  margin: 0;
+  text-align: center;
+  width: min(700px, 100%);
+}
+
+.focus-clock-kicker {
+  color: #6e6d66;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.focus-clock-quote blockquote {
+  color: #33322d;
+  font-size: clamp(1.12rem, 1.55vw, 1.75rem);
+  font-weight: 750;
+  line-height: 1.36;
+  margin: 0;
+  max-width: 42rem;
+}
+
+.focus-clock-quote figcaption {
+  align-items: center;
+  color: #66655f;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  font-weight: 800;
+  gap: 0.65rem;
+  justify-content: center;
+  margin-top: 0.15rem;
+}
+
+.quote-refresh-button {
+  background: rgba(247, 250, 243, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: 0 6px 18px rgba(50, 63, 54, 0.08);
+  color: #66655f;
+  font-size: 0.78rem;
+  min-height: auto;
+  padding: 0.38rem 0.72rem;
+}
+
+.quote-refresh-button:hover {
+  background: rgba(255, 255, 251, 0.78);
+  color: #33322d;
+}
+
+.focus-clock-mode-switch {
+  background: rgba(241, 245, 237, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 8px 22px rgba(50, 63, 54, 0.08);
+  display: flex;
+  gap: 0.28rem;
+  padding: 0.3rem;
+}
+
+.focus-clock-mode-switch button,
+.timer-presets button {
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  color: #66655f;
+  min-height: 2.2rem;
+  padding: 0.5rem 0.95rem;
+}
+
+.focus-clock-mode-switch button:hover,
+.focus-clock-mode-switch button.active,
+.timer-presets button:hover,
+.timer-presets button.active {
+  background: rgba(255, 255, 251, 0.82);
+  border-color: rgba(139, 159, 143, 0.2);
+  box-shadow: 0 5px 14px rgba(55, 67, 59, 0.08);
+  color: #33322d;
+}
+
+.focus-clock-stage,
+.beijing-clock,
+.pomodoro-timer {
+  align-items: center;
+  display: grid;
+  gap: clamp(1.05rem, 2vw, 1.55rem);
+  justify-items: center;
+  width: 100%;
+}
+
+.flip-clock-display {
+  align-items: start;
+  display: flex;
+  gap: clamp(0.45rem, 1.35vw, 0.9rem);
+  justify-content: center;
+  width: 100%;
+}
+
+.flip-clock-group {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  position: relative;
+}
+
+.flip-card {
+  align-items: center;
+  aspect-ratio: 1.08 / 1;
+  background: #f4f1ea;
+  border: 1px solid rgba(70, 70, 60, 0.08);
+  border-radius: clamp(16px, 1.3vw, 22px);
+  box-shadow:
+    inset 0 -1px 0 rgba(70, 70, 60, 0.06),
+    0 10px 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: center;
+  min-width: clamp(6.6rem, 16vw, 12.4rem);
+  overflow: hidden;
+  position: relative;
+}
+
+.flip-card::before,
+.flip-card::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+}
+
+.flip-card::before {
+  background: rgba(90, 90, 80, 0.18);
+  height: 1px;
+  left: 0;
+  right: 0;
+  top: 50%;
+}
+
+.flip-card::after {
+  display: none;
+}
+
+.flip-card-number {
+  background: linear-gradient(180deg, #4a4a43 0%, #252520 48%, #11110f 100%);
+  background-clip: text;
+  color: #222222;
+  font-size: clamp(4.4rem, 11vw, 9.4rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 0.92;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.flip-card-label {
+  color: #6e6d66;
+  font-size: 0.9rem;
+  font-weight: 800;
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0.72rem;
+}
+
+.flip-clock-separator {
+  align-self: center;
+  color: #33322d;
+  font-size: clamp(3.2rem, 8vw, 7rem);
+  font-weight: 900;
+  grid-column: 2;
+  grid-row: 1;
+  line-height: 1;
+  margin: 0 clamp(0.05rem, 0.55vw, 0.42rem);
+}
+
+.focus-clock-date,
+.timer-state {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  font-size: clamp(1rem, 1.45vw, 1.25rem);
+  font-weight: 900;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.focus-clock-date {
+  color: #f4f1ea;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+.timer-state {
+  color: #33322d;
+}
+
+.timer-presets,
+.timer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.62rem;
+  justify-content: center;
+}
+
+.timer-presets {
+  background: rgba(244, 248, 240, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(50, 63, 54, 0.09);
+  padding: 0.32rem;
+}
+
+.timer-presets button {
+  min-width: 3.15rem;
+}
+
+.timer-presets button:disabled,
+.timer-custom-input input:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.timer-custom-input {
+  align-items: center;
+  color: #66655f;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  font-weight: 800;
+  gap: 0.7rem;
+  justify-content: center;
+}
+
+.timer-custom-input input {
+  background: rgba(249, 251, 246, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 8px 22px rgba(50, 63, 54, 0.08);
+  color: #33322d;
+  font-weight: 900;
+  padding: 0.7rem 0.9rem;
+  text-align: center;
+  width: 7.25rem;
+}
+
+.timer-controls button {
+  background: rgba(247, 250, 243, 0.82);
+  border-color: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 12px 30px rgba(50, 63, 54, 0.12);
+  color: #33322d;
+  min-width: 6.1rem;
+}
+
+.timer-controls button:hover {
+  background: rgba(255, 255, 251, 0.92);
+}
+
+.timer-controls .secondary-button {
+  background: rgba(238, 244, 234, 0.62);
+  border-color: rgba(255, 255, 255, 0.68);
+  color: #66655f;
+}
+
+.timer-controls .secondary-button:hover {
+  background: rgba(248, 250, 244, 0.82);
+}
+
+.pomodoro-timer.completed .flip-card {
+  animation: focus-clock-complete 1500ms ease-in-out 2;
+}
+
+@keyframes focus-clock-complete {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 -1px 0 rgba(70, 70, 60, 0.06),
+      0 12px 26px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-clock-mode-switch button,
+  .timer-presets button,
+  .quote-refresh-button {
+    transition: none;
+  }
+
+  .pomodoro-timer.completed .flip-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .focus-clock-page {
+    min-height: auto;
+    padding: 1rem 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .flip-card {
+    min-width: clamp(4.2rem, 24vw, 6rem);
+  }
+
+  .flip-clock-display {
+    gap: 0.25rem;
+  }
+
+  .flip-card-number {
+    font-size: clamp(2.65rem, 15vw, 4rem);
+  }
+
+  .flip-clock-separator {
+    font-size: clamp(2.4rem, 11vw, 3.6rem);
+  }
+}
+
+@media (max-width: 520px) {
+  .focus-clock-mode-switch,
+  .timer-presets {
+    border-radius: 22px;
+    width: 100%;
+  }
+
+  .focus-clock-mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .timer-presets {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .timer-presets button {
+    min-width: 0;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+}

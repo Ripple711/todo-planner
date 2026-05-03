@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { RainShaderBackground } from './components/visual/RainShaderBackground';
+import { FocusClockPage } from './pages/FocusClockPage';
 import { MainWorkspacePage } from './pages/MainWorkspacePage';
 import { QuickCapturePage } from './pages/QuickCapturePage';
 import { RainGlassDemoPage } from './pages/RainGlassDemoPage';
@@ -21,6 +22,7 @@ export default function App() {
                 <Route path="/workspace" element={<MainWorkspacePage />} />
                 <Route path="/quick-capture" element={<QuickCapturePage />} />
                 <Route path="/task-pool" element={<TaskPoolPage />} />
+                <Route path="/focus-clock" element={<FocusClockPage />} />
                 <Route path="*" element={<Navigate to="/workspace" replace />} />
               </Routes>
             </AppLayout>

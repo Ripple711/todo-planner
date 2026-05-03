@@ -160,12 +160,25 @@ nav {
 }
 
 .nav-link {
+  align-items: center;
   background: rgba(245, 249, 245, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   color: rgba(52, 65, 58, 0.72);
+  display: flex;
+  gap: 0.68rem;
   padding: 0.78rem 0.85rem;
   text-decoration: none;
+}
+
+.nav-link-icon {
+  color: rgba(52, 65, 58, 0.52);
+  flex: 0 0 auto;
+  height: 1.15rem;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+  width: 1.15rem;
 }
 
 .nav-link:hover,
@@ -178,6 +191,11 @@ nav {
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 10px 22px rgba(18, 31, 25, 0.08);
   color: var(--active-text);
+}
+
+.nav-link:hover .nav-link-icon,
+.nav-link.active .nav-link-icon {
+  color: rgba(47, 59, 53, 0.88);
 }
 
 .page-content {
