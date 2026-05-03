@@ -48,6 +48,11 @@ const calendarViews = [
 
 type CalendarViewId = (typeof calendarViews)[number]['id'];
 
+function setPlannerDragPerformanceMode(isActive: boolean) {
+  document.body.classList.toggle('planner-task-dragging', isActive);
+  window.dispatchEvent(new CustomEvent(isActive ? 'planner-task-drag-start' : 'planner-task-drag-end'));
+}
+
 export function MainWorkspacePage() {
   const {
     tasks,
@@ -60,12 +65,15 @@ export function MainWorkspacePage() {
   } = usePlannerData();
   const calendarRef = useRef<FullCalendar | null>(null);
   const taskPoolRef = useRef<HTMLDivElement | null>(null);
+  const activeDrawerTaskRef = useRef<HTMLElement | null>(null);
+  const dragEndTimeoutRef = useRef<number | null>(null);
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(true);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<CalendarViewId>('dayGridMonth');
 
   const sortedUnfinishedTasks = useMemo(() => sortTasksByDeadline(unfinishedTasks), [unfinishedTasks]);
-  const activeTask = unfinishedTasks.find((task) => task.id === activeTaskId);
+  const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
+  const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
   useEffect(() => {
     if (!taskPoolRef.current) {
@@ -86,10 +94,21 @@ export function MainWorkspacePage() {
     return () => draggable.destroy();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (dragEndTimeoutRef.current) {
+        window.clearTimeout(dragEndTimeoutRef.current);
+      }
+
+      activeDrawerTaskRef.current?.classList.remove('is-dragging');
+      setPlannerDragPerformanceMode(false);
+    };
+  }, []);
+
   const events = useMemo(
     () =>
       scheduleBlocks.map((block) => {
-        const task = tasks.find((item) => item.id === block.taskId);
+        const task = taskById.get(block.taskId);
         const colorStyle = getTaskColorStyle(task, tags);
 
         return {
@@ -109,8 +128,36 @@ export function MainWorkspacePage() {
           },
         };
       }),
-    [scheduleBlocks, tags, tasks],
+    [scheduleBlocks, tags, taskById],
   );
+
+  function endDrawerTaskDrag(delay = 160) {
+    if (dragEndTimeoutRef.current) {
+      window.clearTimeout(dragEndTimeoutRef.current);
+    }
+
+    dragEndTimeoutRef.current = window.setTimeout(() => {
+      activeDrawerTaskRef.current?.classList.remove('is-dragging');
+      activeDrawerTaskRef.current = null;
+      setPlannerDragPerformanceMode(false);
+      setActiveTaskId(null);
+    }, delay);
+  }
+
+  function handleDrawerTaskPointerDown(taskId: string, element: HTMLElement) {
+    if (dragEndTimeoutRef.current) {
+      window.clearTimeout(dragEndTimeoutRef.current);
+    }
+
+    activeDrawerTaskRef.current?.classList.remove('is-dragging');
+    activeDrawerTaskRef.current = element;
+    element.classList.add('is-dragging');
+    setPlannerDragPerformanceMode(true);
+    setActiveTaskId(taskId);
+
+    window.addEventListener('pointerup', () => endDrawerTaskDrag(), { once: true });
+    window.addEventListener('pointercancel', () => endDrawerTaskDrag(), { once: true });
+  }
 
   async function handleEventReceive(info: EventReceiveArg) {
     const taskId = info.event.extendedProps.taskId as string | undefined;
@@ -126,7 +173,7 @@ export function MainWorkspacePage() {
 
     info.event.remove();
     await createScheduleBlock(taskId, plannedDate, startText, endText);
-    setActiveTaskId(null);
+    endDrawerTaskDrag(0);
 
     if (info.event.allDay) {
       calendarRef.current?.getApi().changeView('timeGridDay', plannedDate);
@@ -171,7 +218,7 @@ export function MainWorkspacePage() {
   }
 
   function renderEventContent(info: EventContentArg) {
-    const task = tasks.find((item) => item.id === info.event.extendedProps.taskId);
+    const task = taskById.get(info.event.extendedProps.taskId as string);
     const eventColor = info.event.extendedProps.colorBase as string | undefined;
     const eventStyle = { '--event-color': eventColor } as CSSProperties;
 
@@ -275,7 +322,11 @@ export function MainWorkspacePage() {
               eventContent={renderEventContent}
               eventReceive={(info) => void handleEventReceive(info)}
               eventDrop={(info) => void handleEventDrop(info)}
+              eventDragStart={() => setPlannerDragPerformanceMode(true)}
+              eventDragStop={() => setPlannerDragPerformanceMode(false)}
               eventResize={(info) => void handleEventResize(info)}
+              eventResizeStart={() => setPlannerDragPerformanceMode(true)}
+              eventResizeStop={() => setPlannerDragPerformanceMode(false)}
               datesSet={(info) => setCurrentView(info.view.type as CalendarViewId)}
               height="auto"
               moreLinkClick="day"
@@ -311,11 +362,8 @@ export function MainWorkspacePage() {
                 data-task-id={task.id}
                 data-title={task.title}
                 data-duration={formatDuration(task.estimatedMinutes)}
-                onMouseDown={() => setActiveTaskId(task.id)}
-                onMouseUp={() => setTimeout(() => setActiveTaskId(null), 500)}
-                onTouchStart={() => setActiveTaskId(task.id)}
-              onTouchEnd={() => setTimeout(() => setActiveTaskId(null), 500)}
-            >
+                onPointerDown={(event) => handleDrawerTaskPointerDown(task.id, event.currentTarget)}
+              >
                 <div className="task-card-top drawer-task-top">
                   <div>
                     <div className="task-title-row">

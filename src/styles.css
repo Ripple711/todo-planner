@@ -570,6 +570,13 @@ textarea {
   width: 0.72rem;
 }
 
+.task-card-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
+
 .task-card-grip {
   background:
     radial-gradient(circle, rgba(52, 65, 58, 0.34) 1.35px, transparent 1.8px) 0 0 / 6px 6px;
@@ -578,6 +585,79 @@ textarea {
   opacity: 0.45;
   transition: opacity 180ms ease;
   width: 18px;
+}
+
+.task-menu-wrap {
+  position: relative;
+  z-index: 3;
+}
+
+.task-menu-button {
+  align-items: center;
+  background: rgba(239, 245, 240, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 6px 16px rgba(18, 31, 25, 0.08);
+  display: inline-flex;
+  gap: 0.18rem;
+  height: 2rem;
+  justify-content: center;
+  padding: 0;
+  width: 2rem;
+}
+
+.task-menu-button span {
+  background: rgba(52, 65, 58, 0.58);
+  border-radius: 999px;
+  height: 0.22rem;
+  width: 0.22rem;
+}
+
+.task-menu-button:hover {
+  background: rgba(226, 236, 228, 0.84);
+}
+
+.task-menu-button:hover span {
+  background: rgba(47, 59, 53, 0.82);
+}
+
+.task-menu {
+  background: rgba(245, 249, 245, 0.96);
+  border: 1px solid rgba(151, 125, 112, 0.22);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 16px 34px rgba(18, 31, 25, 0.16);
+  min-width: 7rem;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.42rem);
+}
+
+.task-menu-delete {
+  background: rgba(226, 211, 203, 0.58);
+  border: 1px solid rgba(157, 105, 92, 0.22);
+  box-shadow: none;
+  color: #7d5147;
+  padding: 0.58rem 0.78rem;
+  width: 100%;
+}
+
+.task-menu-delete:hover {
+  background: rgba(216, 196, 188, 0.72);
+}
+
+.task-card-completed {
+  opacity: 0.82;
+}
+
+.task-card-completed h3 {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(52, 65, 58, 0.36);
 }
 
 .task-meta-row {
@@ -625,6 +705,58 @@ textarea {
 .task-card p {
   color: var(--text-secondary);
   margin: 0.25rem 0 0;
+}
+
+.completed-task-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.completed-section-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+  color: var(--text-primary);
+  display: inline-flex;
+  gap: 0.55rem;
+  justify-self: start;
+  padding: 0.25rem 0;
+}
+
+.completed-section-toggle:hover {
+  background: transparent;
+  color: var(--active-text);
+}
+
+.completed-section-triangle {
+  border-bottom: 0.32rem solid transparent;
+  border-left: 0.48rem solid currentColor;
+  border-top: 0.32rem solid transparent;
+  height: 0;
+  transition: transform 160ms ease;
+  width: 0;
+}
+
+.completed-section-triangle.open {
+  transform: rotate(90deg);
+}
+
+.completed-task-list {
+  animation: completed-section-in 160ms ease;
+}
+
+@keyframes completed-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .progress-wrap {
@@ -767,12 +899,16 @@ textarea {
 }
 
 .drawer-task {
+  backface-visibility: hidden;
+  contain: layout paint;
   cursor: grab;
   user-select: none;
   transition:
     box-shadow 180ms ease,
     transform 180ms ease,
     border-color 180ms ease;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .drawer-task:hover {
@@ -789,6 +925,34 @@ textarea {
 .drawer-task:active {
   cursor: grabbing;
   transform: translateY(1px);
+}
+
+.drawer-task.is-dragging,
+.planner-task-dragging .drawer-task:hover {
+  background: rgba(246, 249, 246, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 8px 18px rgba(18, 31, 25, 0.1);
+  transition: none;
+  transform: translateZ(0);
+}
+
+.planner-task-dragging .drawer-task:not(.is-dragging) {
+  transition: none;
+}
+
+.planner-task-dragging .calendar-panel,
+.planner-task-dragging .task-pool-drawer {
+  backdrop-filter: blur(6px) saturate(94%);
+  -webkit-backdrop-filter: blur(6px) saturate(94%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 12px 30px rgba(18, 31, 25, 0.1);
+}
+
+.planner-task-dragging .fc-event,
+.planner-task-dragging .fc-highlight {
+  transition: none !important;
 }
 
 .drawer-task-top > div {

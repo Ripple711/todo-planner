@@ -25,6 +25,7 @@ type PlannerData = {
   createScheduleBlock: (taskId: string, plannedDate: string, start?: string, end?: string) => Promise<void>;
   updateScheduleBlockTime: (blockId: string, start: string, end?: string, allDay?: boolean) => Promise<void>;
   updateTaskProgress: (taskId: string, percent: number) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
 };
 
 export function usePlannerData(): PlannerData {
@@ -171,6 +172,17 @@ export function usePlannerData(): PlannerData {
     await Promise.all([saveTasks(nextTasks), saveProgressLogs(nextLogs)]);
   }
 
+  async function deleteTask(taskId: string) {
+    const nextTasks = tasks.filter((task) => task.id !== taskId);
+    const nextBlocks = scheduleBlocks.filter((block) => block.taskId !== taskId);
+    const nextLogs = progressLogs.filter((log) => log.taskId !== taskId);
+
+    setTasks(nextTasks);
+    setScheduleBlocks(nextBlocks);
+    setProgressLogs(nextLogs);
+    await Promise.all([saveTasks(nextTasks), saveScheduleBlocks(nextBlocks), saveProgressLogs(nextLogs)]);
+  }
+
   return {
     tasks,
     unfinishedTasks,
@@ -183,5 +195,6 @@ export function usePlannerData(): PlannerData {
     createScheduleBlock,
     updateScheduleBlockTime,
     updateTaskProgress,
+    deleteTask,
   };
 }

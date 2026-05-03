@@ -95,8 +95,10 @@ export function RainShaderBackground({
     let animationFrame = 0;
     let texture: WebGLTexture | null = null;
     let startTime = performance.now();
+    let lastRenderTime = 0;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dragPerformanceModeRef = { current: false };
     const program = createProgram(renderer);
     const positionLocation = renderer.getAttribLocation(program, 'aPosition');
     const resolutionLocation = renderer.getUniformLocation(program, 'iResolution');
@@ -144,7 +146,14 @@ export function RainShaderBackground({
     }
 
     function render(now: number) {
+      if (dragPerformanceModeRef.current && now - lastRenderTime < 40) {
+        animationFrame = window.requestAnimationFrame(render);
+        return;
+      }
+
+      lastRenderTime = now;
       const elapsed = reducedMotion ? 0 : (now - startTime) / 1000;
+      const activeIntensity = dragPerformanceModeRef.current ? intensity * 0.52 : intensity;
       renderer.useProgram(program);
       renderer.activeTexture(renderer.TEXTURE0);
       renderer.bindTexture(renderer.TEXTURE_2D, texture);
@@ -153,7 +162,7 @@ export function RainShaderBackground({
       renderer.uniform4f(mouseLocation, 0, 0, 0, 0);
       renderer.uniform1i(channelLocation, 0);
       renderer.uniform2f(imageResolutionLocation, image.naturalWidth || 1, image.naturalHeight || 1);
-      renderer.uniform1f(intensityLocation, reducedMotion ? intensity * 0.42 : intensity);
+      renderer.uniform1f(intensityLocation, reducedMotion ? intensity * 0.42 : activeIntensity);
       renderer.drawArrays(renderer.TRIANGLES, 0, 6);
 
       if (!reducedMotion) {
@@ -169,6 +178,14 @@ export function RainShaderBackground({
       render(startTime);
     }
 
+    function handlePlannerDragStart() {
+      dragPerformanceModeRef.current = true;
+    }
+
+    function handlePlannerDragEnd() {
+      dragPerformanceModeRef.current = false;
+    }
+
     image.onload = start;
 
     if (image.complete && image.naturalWidth) {
@@ -176,9 +193,13 @@ export function RainShaderBackground({
     }
 
     window.addEventListener('resize', resize);
+    window.addEventListener('planner-task-drag-start', handlePlannerDragStart);
+    window.addEventListener('planner-task-drag-end', handlePlannerDragEnd);
 
     return () => {
       window.removeEventListener('resize', resize);
+      window.removeEventListener('planner-task-drag-start', handlePlannerDragStart);
+      window.removeEventListener('planner-task-drag-end', handlePlannerDragEnd);
       window.cancelAnimationFrame(animationFrame);
 
       if (texture) {

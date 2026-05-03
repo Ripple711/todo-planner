@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react';
+import { useState } from 'react';
+import type { CSSProperties, MouseEvent, PointerEvent, TouchEvent } from 'react';
 import { ProgressBar } from './ProgressBar';
 import type { Tag, Task } from '../types';
 import { getTaskColorStyle } from '../utils/colors';
@@ -7,6 +8,7 @@ type TaskListProps = {
   tasks: Task[];
   tags: Tag[];
   onProgressChange?: (taskId: string, percent: number) => Promise<void>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
   compact?: boolean;
 };
 
@@ -22,9 +24,36 @@ const priorityLabels: Record<Task['priority'], string> = {
   high: '高优先级',
 };
 
-export function TaskList({ tasks, tags, onProgressChange, compact = false }: TaskListProps) {
+function stopDragEvent(event: PointerEvent | TouchEvent) {
+  event.stopPropagation();
+}
+
+function stopMenuEvent(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+export function TaskList({ tasks, tags, onProgressChange, onDeleteTask, compact = false }: TaskListProps) {
+  const [openMenuTaskId, setOpenMenuTaskId] = useState<string | null>(null);
+
   if (tasks.length === 0) {
     return <p className="empty-state">还没有任务。雨声很轻，任务池也很安静。</p>;
+  }
+
+  async function handleDeleteTask(task: Task) {
+    setOpenMenuTaskId(null);
+
+    if (!onDeleteTask) {
+      return;
+    }
+
+    const confirmed = window.confirm(`确定删除这个任务吗？\n\n${task.title}`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    await onDeleteTask(task.id);
   }
 
   return (
@@ -37,18 +66,58 @@ export function TaskList({ tasks, tags, onProgressChange, compact = false }: Tas
           '--task-surface': colorStyle.surface,
           '--task-border': colorStyle.border,
         } as CSSProperties;
+        const isCompleted = task.status === 'done' || task.progress.percent >= 100;
 
         return (
-          <article key={task.id} className={`task-card priority-${task.priority}`} style={taskCardStyle}>
+          <article
+            key={task.id}
+            className={`task-card priority-${task.priority}${isCompleted ? ' task-card-completed' : ''}`}
+            style={taskCardStyle}
+          >
             <div className="task-card-top">
               <div className="task-title-row">
                 <span className="task-color-dot" aria-hidden="true" />
                 <h3>{task.title}</h3>
               </div>
-              <span className="task-card-grip" aria-hidden="true" />
+              <div className="task-card-actions">
+                <span className="task-card-grip" aria-hidden="true" />
+                {onDeleteTask ? (
+                  <div className="task-menu-wrap" onPointerDown={stopDragEvent} onTouchStart={stopDragEvent}>
+                    <button
+                      type="button"
+                      className="task-menu-button"
+                      aria-label={`${task.title} 更多操作`}
+                      aria-expanded={openMenuTaskId === task.id}
+                      onClick={(event) => {
+                        stopMenuEvent(event);
+                        setOpenMenuTaskId((currentTaskId) => (currentTaskId === task.id ? null : task.id));
+                      }}
+                    >
+                      <span aria-hidden="true" />
+                      <span aria-hidden="true" />
+                      <span aria-hidden="true" />
+                    </button>
+                    {openMenuTaskId === task.id ? (
+                      <div className="task-menu" role="menu">
+                        <button
+                          type="button"
+                          className="task-menu-delete"
+                          role="menuitem"
+                          onClick={(event) => {
+                            stopMenuEvent(event);
+                            void handleDeleteTask(task);
+                          }}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="task-meta-row">
-              <span>{statusLabels[task.status]}</span>
+              <span>{isCompleted ? '已完成' : statusLabels[task.status]}</span>
               <span>{priorityLabels[task.priority]}</span>
               <span>截止 {task.deadline}</span>
               {task.estimatedMinutes ? <span>预计 {task.estimatedMinutes} 分钟</span> : null}
