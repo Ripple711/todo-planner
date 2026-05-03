@@ -1,0 +1,49 @@
+# Progress
+
+## Session Log
+- Started MVP skeleton task.
+- Created local planning files in the project root.
+- Inspected existing app files and found the core MVP structure already present.
+- Moving to Chinese localization and small polish for the skeleton.
+- Updated navigation, pages, task display labels, calendar locale, seed data, and HTML language/title to Chinese.
+- Ran `npm run build` successfully.
+- Started Vite dev server on `http://127.0.0.1:5173` and confirmed it returns HTTP 200.
+- Started product-direction refactor.
+- Updated task, tag, progress, and schedule block types.
+- Reworked localForage seed version so refreshed seed data demonstrates the new workflow.
+- Added Main Workspace with draggable task sidebar and one combined calendar planning surface.
+- Reworked Quick Capture and Task Pool for richer task fields, tag creation, and progress updates.
+- Replaced the dark demo styling with a soft pink stationery-inspired theme.
+- Ran `npm run build` successfully after fixing strict TypeScript issues.
+- Confirmed local dev server still returns HTTP 200 at `http://127.0.0.1:5173`.
+- Restored Main Workspace calendar view switching for Day, Week, and Month.
+- Rebuilt successfully after the calendar view fix.
+- Improved month view event rendering with compact pills, day event limits, more-link day navigation, and date-click day navigation.
+- Rebuilt successfully after the month-view display fix.
+- Replaced the soft pink visual direction with a low-saturation rainy mountain / Morandi glass style.
+- Added shared task color utilities and changed calendar event generation so scheduled events inherit color from each task's stable primary tag.
+- Updated seed tag colors and tag creation colors to Morandi values.
+- Ran `npm run build` successfully after the style and color inheritance pass.
+- Added the real `rainy-mountain.jpg` fixed background, glass panel material, and a lightweight edge rain overlay component.
+- Rebuilt successfully after adding the background atmosphere and rain overlay.
+- Adjusted seed migration to preserve existing local tasks/schedule blocks while updating old seed tag colors to the Morandi palette.
+- Rebuilt successfully after the persistence-safe seed migration.
+- Strengthened `RainOverlay` into an actual subtle animated rain atmosphere with edge rain curtains and soft moving highlights.
+- Increased large-panel blur and added a clearer foggy glass texture layer while keeping dense content elements solid.
+- Rebuilt successfully after the rain atmosphere pass.
+- Replaced the CSS rain-line overlay with a canvas-based `RainGlassOverlay` that draws droplets, trails, fog, and refracted background samples.
+- Added `/rain-glass-demo` as an isolated preview route for the rainy-glass layer.
+- Removed the old CSS-line `RainOverlay` component.
+- Replaced the handmade canvas droplet overlay with direct WebGL `RainShaderBackground` integration based on the Heartfelt shader by Martijn Steinrucken / BigWings.
+- Added shader attribution in `rainFragmentShader.ts` and `CREDITS.md`.
+- Mounted the shader behind the app layout and updated `/rain-glass-demo` to preview the shader background.
+- Ran `npm run build` successfully after the shader port.
+- Moved `RainShaderBackground` to the root `App` so it mounts once behind every route.
+- Refined the layout into narrower floating glass panels: 210px sidebar, 300px task drawer, 1060px content max width, and wider outer padding.
+- Ran `npm run build` successfully after global shader integration and layout refinement.
+- Added a CSS color token system for rainy forest / misty green glass surfaces, text, borders, shadows, active states, date emphasis, and progress controls.
+- Replaced old yellow active controls and generic Morandi task colors with the new sage/fog/forest-green palette.
+- Ran `npm run build` successfully after the color system pass.
+- Replaced FullCalendar's Day/Week/Month toolbar buttons with a custom React segmented control using a moving active pill.
+- Strengthened right drawer task card styling with visible task-color paper tint, clearer hierarchy, hover lift, and refined progress treatment.
+- Ran `npm run build` successfully after the segmented control and task card refinement.
