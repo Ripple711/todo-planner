@@ -15,7 +15,7 @@ void main() {
 }
 `;
 
-const backgroundSrc = '/assets/backgrounds/rainy-mountain.jpg';
+const backgroundSrc = `${import.meta.env.BASE_URL}assets/backgrounds/rainy-mountain.jpg`;
 
 function compileShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
