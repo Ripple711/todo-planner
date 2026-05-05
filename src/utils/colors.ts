@@ -1,16 +1,22 @@
 import type { Tag, Task } from '../types';
 
-export const neutralTaskColor = '#BCC7BE';
+export const neutralTaskColor = '#A7B3AA';
 
-export const morandiTagColors = ['#AFC0B1', '#AEB9C9', '#C7B8A8', '#B7C5B3', '#B8B1C8', '#C5AFA6'];
+export const morandiTagColors = ['#8FA6B7', '#8EA27F', '#B79B86', '#80956F', '#A39AB4', '#A98076'];
 
 const legacyColorMap: Record<string, string> = {
-  '#8FA397': '#AFC0B1',
-  '#8191A3': '#AEB9C9',
-  '#A59C8F': '#C7B8A8',
-  '#9C9F83': '#B7C5B3',
-  '#B99B86': '#C7B8A8',
-  '#8A9A9A': '#BCC7BE',
+  '#8FA397': '#8EA27F',
+  '#8191A3': '#8FA6B7',
+  '#A59C8F': '#B79B86',
+  '#9C9F83': '#80956F',
+  '#B99B86': '#B79B86',
+  '#8A9A9A': '#A7B3AA',
+  '#AFC0B1': '#8EA27F',
+  '#AEB9C9': '#8FA6B7',
+  '#C7B8A8': '#B79B86',
+  '#B7C5B3': '#80956F',
+  '#B8B1C8': '#A39AB4',
+  '#C5AFA6': '#A98076',
 };
 
 export type TaskColorStyle = {

@@ -14,19 +14,19 @@ export const seedTags: Tag[] = [
   {
     id: 'tag-study',
     name: '学习',
-    color: '#AEB9C9',
+    color: '#8FA6B7',
     createdAt: now.toISOString(),
   },
   {
     id: 'tag-work',
     name: '工作',
-    color: '#AFC0B1',
+    color: '#8EA27F',
     createdAt: now.toISOString(),
   },
   {
     id: 'tag-life',
     name: '生活',
-    color: '#C7B8A8',
+    color: '#B79B86',
     createdAt: now.toISOString(),
   },
 ];

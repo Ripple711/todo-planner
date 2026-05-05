@@ -1,33 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { CSSProperties, MouseEvent, PointerEvent, TouchEvent } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
+import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
-import type { EventContentArg, EventDropArg } from '@fullcalendar/core';
-import type { DateClickArg, EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
+import type { EventContentArg, EventDropArg, MoreLinkArg, MoreLinkSimpleAction } from '@fullcalendar/core';
+import type { DateClickArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import { ProgressBar } from '../components/ProgressBar';
 import { usePlannerData } from '../hooks/usePlannerData';
 import type { Tag, Task } from '../types';
 import { getTaskColorStyle } from '../utils/colors';
 import { sortTasksByDeadline } from '../utils/taskSorting';
 
-function formatDuration(minutes?: number) {
-  if (!minutes) {
-    return '00:45';
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const restMinutes = minutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(restMinutes).padStart(2, '0')}`;
-}
-
 function formatDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function formatLocalDateTime(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+function addMinutes(date: Date, minutes: number) {
+  return formatLocalDateTime(new Date(date.getTime() + minutes * 60_000));
 }
 
 function getTaskTags(task: Task, tags: Tag[]) {
@@ -62,48 +66,18 @@ export function MainWorkspacePage() {
     isLoading,
     createScheduleBlock,
     updateScheduleBlockTime,
+    deleteTask,
   } = usePlannerData();
   const calendarRef = useRef<FullCalendar | null>(null);
-  const taskPoolRef = useRef<HTMLDivElement | null>(null);
-  const activeDrawerTaskRef = useRef<HTMLElement | null>(null);
-  const dragEndTimeoutRef = useRef<number | null>(null);
+  const schedulingRef = useRef<string | null>(null);
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(true);
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [openDrawerMenuTaskId, setOpenDrawerMenuTaskId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<CalendarViewId>('dayGridMonth');
 
   const sortedUnfinishedTasks = useMemo(() => sortTasksByDeadline(unfinishedTasks), [unfinishedTasks]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
-  const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
-
-  useEffect(() => {
-    if (!taskPoolRef.current) {
-      return undefined;
-    }
-
-    const draggable = new Draggable(taskPoolRef.current, {
-      itemSelector: '.draggable-task',
-      eventData: (eventElement) => ({
-        title: eventElement.getAttribute('data-title') ?? '未命名任务',
-        duration: eventElement.getAttribute('data-duration') ?? '00:45',
-        extendedProps: {
-          taskId: eventElement.getAttribute('data-task-id'),
-        },
-      }),
-    });
-
-    return () => draggable.destroy();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (dragEndTimeoutRef.current) {
-        window.clearTimeout(dragEndTimeoutRef.current);
-      }
-
-      activeDrawerTaskRef.current?.classList.remove('is-dragging');
-      setPlannerDragPerformanceMode(false);
-    };
-  }, []);
+  const selectedTask = selectedTaskId ? taskById.get(selectedTaskId) : undefined;
 
   const events = useMemo(
     () =>
@@ -131,53 +105,33 @@ export function MainWorkspacePage() {
     [scheduleBlocks, tags, taskById],
   );
 
-  function endDrawerTaskDrag(delay = 160) {
-    if (dragEndTimeoutRef.current) {
-      window.clearTimeout(dragEndTimeoutRef.current);
-    }
-
-    dragEndTimeoutRef.current = window.setTimeout(() => {
-      activeDrawerTaskRef.current?.classList.remove('is-dragging');
-      activeDrawerTaskRef.current = null;
-      setPlannerDragPerformanceMode(false);
-      setActiveTaskId(null);
-    }, delay);
+  function handleDrawerTaskClick(taskId: string) {
+    setSelectedTaskId((currentTaskId) => (currentTaskId === taskId ? null : taskId));
   }
 
-  function handleDrawerTaskPointerDown(taskId: string, element: HTMLElement) {
-    if (dragEndTimeoutRef.current) {
-      window.clearTimeout(dragEndTimeoutRef.current);
-    }
-
-    activeDrawerTaskRef.current?.classList.remove('is-dragging');
-    activeDrawerTaskRef.current = element;
-    element.classList.add('is-dragging');
-    setPlannerDragPerformanceMode(true);
-    setActiveTaskId(taskId);
-
-    window.addEventListener('pointerup', () => endDrawerTaskDrag(), { once: true });
-    window.addEventListener('pointercancel', () => endDrawerTaskDrag(), { once: true });
+  function stopMenuPointer(event: PointerEvent | TouchEvent) {
+    event.stopPropagation();
   }
 
-  async function handleEventReceive(info: EventReceiveArg) {
-    const taskId = info.event.extendedProps.taskId as string | undefined;
+  function stopMenuClick(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
 
-    if (!taskId || !info.event.start) {
-      info.event.remove();
+  async function handleDeleteTask(task: Task) {
+    setOpenDrawerMenuTaskId(null);
+
+    const confirmed = window.confirm(`确定删除这个任务吗？\n\n${task.title}`);
+
+    if (!confirmed) {
       return;
     }
 
-    const plannedDate = info.event.startStr.slice(0, 10);
-    const startText = info.event.allDay ? undefined : info.event.startStr;
-    const endText = info.event.allDay || !info.event.end ? undefined : info.event.endStr;
-
-    info.event.remove();
-    await createScheduleBlock(taskId, plannedDate, startText, endText);
-    endDrawerTaskDrag(0);
-
-    if (info.event.allDay) {
-      calendarRef.current?.getApi().changeView('timeGridDay', plannedDate);
+    if (selectedTaskId === task.id) {
+      setSelectedTaskId(null);
     }
+
+    await deleteTask(task.id);
   }
 
   async function handleEventDrop(info: EventDropArg) {
@@ -185,10 +139,14 @@ export function MainWorkspacePage() {
       return;
     }
 
+    const task = taskById.get(info.event.extendedProps.taskId as string);
+    const fallbackEnd =
+      !info.event.allDay && !info.event.end ? addMinutes(info.event.start, task?.estimatedMinutes ?? 60) : undefined;
+
     await updateScheduleBlockTime(
       info.event.id,
       info.event.startStr,
-      info.event.endStr || undefined,
+      info.event.endStr || fallbackEnd,
       info.event.allDay,
     );
   }
@@ -206,10 +164,76 @@ export function MainWorkspacePage() {
     );
   }
 
-  function handleDateClick(info: DateClickArg) {
+  async function scheduleSelectedTaskForDate(dateStr: string, shouldOpenDay = false) {
+    if (!selectedTaskId || !selectedTask) {
+      return;
+    }
+
+    const plannedDate = dateStr.slice(0, 10);
+    const scheduleKey = `${selectedTaskId}:unscheduled:${plannedDate}`;
+
+    if (schedulingRef.current === scheduleKey) {
+      return;
+    }
+
+    schedulingRef.current = scheduleKey;
+
+    try {
+      await createScheduleBlock(selectedTaskId, plannedDate);
+      setSelectedTaskId(null);
+
+      if (shouldOpenDay) {
+        calendarRef.current?.getApi().changeView('timeGridDay', plannedDate);
+      }
+    } finally {
+      schedulingRef.current = null;
+    }
+  }
+
+  async function scheduleSelectedTaskForTime(startDate: Date, startStr: string) {
+    if (!selectedTaskId || !selectedTask) {
+      return;
+    }
+
+    const plannedDate = startStr.slice(0, 10);
+    const start = startStr;
+    const end = addMinutes(startDate, selectedTask.estimatedMinutes ?? 60);
+    const scheduleKey = `${selectedTaskId}:timed:${start}`;
+
+    if (schedulingRef.current === scheduleKey) {
+      return;
+    }
+
+    schedulingRef.current = scheduleKey;
+
+    try {
+      await createScheduleBlock(selectedTaskId, plannedDate, start, end);
+      setSelectedTaskId(null);
+    } finally {
+      schedulingRef.current = null;
+    }
+  }
+
+  async function handleDateClick(info: DateClickArg) {
+    if (selectedTaskId) {
+      if (info.view.type === 'dayGridMonth' || info.allDay) {
+        await scheduleSelectedTaskForDate(info.dateStr, info.view.type === 'dayGridMonth');
+        return;
+      }
+
+      await scheduleSelectedTaskForTime(info.date, info.dateStr);
+      return;
+    }
+
     if (info.view.type === 'dayGridMonth') {
       calendarRef.current?.getApi().changeView('timeGridDay', info.dateStr);
     }
+  }
+
+  function handleMoreLinkClick(info: MoreLinkArg): MoreLinkSimpleAction {
+    info.jsEvent.preventDefault();
+    info.jsEvent.stopPropagation();
+    return 'timeGridDay';
   }
 
   function handleViewChange(viewId: CalendarViewId) {
@@ -236,7 +260,7 @@ export function MainWorkspacePage() {
       <div className="time-event-content" style={eventStyle}>
         <strong>{info.event.title}</strong>
         <span>
-          {info.timeText || '未排具体时间'}
+          {info.timeText || '未安排具体时间'}
           {task ? ` · ${priorityLabels[task.priority]}优先级 · ${task.progress.percent}%` : ''}
         </span>
       </div>
@@ -244,12 +268,12 @@ export function MainWorkspacePage() {
   }
 
   return (
-    <section className={`workspace-page${isTaskPoolOpen ? ' with-pool' : ''}`}>
+    <section className={`workspace-page${isTaskPoolOpen ? ' with-pool' : ''}${selectedTask ? ' scheduling-task' : ''}`}>
       <div className="workspace-main">
         <header className="workspace-header">
           <div>
             <p className="eyebrow">主工作台</p>
-            <h2>把任务拖到日历里</h2>
+            <h2>选择任务，点击日历安排</h2>
           </div>
           <div className="workspace-actions">
             <div className={`view-segment view-segment-${currentView}`} aria-label="日历视图">
@@ -308,19 +332,17 @@ export function MainWorkspacePage() {
                   type: 'dayGridMonth',
                 },
               }}
-              allDayText="未排具体时间"
-              dateClick={handleDateClick}
+              allDayText="未安排具体时间"
+              dateClick={(info) => void handleDateClick(info)}
               dayCellClassNames={(arg) =>
-                activeTask?.deadline === formatDateKey(arg.date) ? ['deadline-highlight'] : []
+                selectedTask?.deadline === formatDateKey(arg.date) ? ['deadline-highlight'] : []
               }
               dayMaxEvents={3}
               displayEventTime
-              droppable
               editable
               eventResizableFromStart
               events={events}
               eventContent={renderEventContent}
-              eventReceive={(info) => void handleEventReceive(info)}
               eventDrop={(info) => void handleEventDrop(info)}
               eventDragStart={() => setPlannerDragPerformanceMode(true)}
               eventDragStop={() => setPlannerDragPerformanceMode(false)}
@@ -329,14 +351,14 @@ export function MainWorkspacePage() {
               eventResizeStop={() => setPlannerDragPerformanceMode(false)}
               datesSet={(info) => setCurrentView(info.view.type as CalendarViewId)}
               height="auto"
-              moreLinkClick="day"
+              moreLinkClick={handleMoreLinkClick}
               nowIndicator
             />
           )}
         </div>
       </div>
 
-      <aside className={`task-pool-drawer${isTaskPoolOpen ? ' open' : ''}`} ref={taskPoolRef}>
+      <aside className={`task-pool-drawer${isTaskPoolOpen ? ' open' : ''}`}>
         <div className="drawer-header">
           <div>
             <p className="eyebrow">任务池</p>
@@ -344,6 +366,15 @@ export function MainWorkspacePage() {
           </div>
           <span>{sortedUnfinishedTasks.length} 个</span>
         </div>
+
+        {selectedTask ? (
+          <div className="tap-schedule-hint" role="status">
+            <span>已选择任务，点击日期安排到当天</span>
+            <button type="button" className="tap-schedule-cancel" onClick={() => setSelectedTaskId(null)}>
+              取消选择
+            </button>
+          </div>
+        ) : null}
 
         <div className="drawer-task-list">
           {sortedUnfinishedTasks.map((task) => {
@@ -357,12 +388,10 @@ export function MainWorkspacePage() {
             return (
               <article
                 key={task.id}
-                className={`drawer-task draggable-task priority-${task.priority}`}
+                className={`drawer-task priority-${task.priority}${selectedTaskId === task.id ? ' selected-for-schedule' : ''}`}
                 style={taskCardStyle}
-                data-task-id={task.id}
-                data-title={task.title}
-                data-duration={formatDuration(task.estimatedMinutes)}
-                onPointerDown={(event) => handleDrawerTaskPointerDown(task.id, event.currentTarget)}
+                aria-pressed={selectedTaskId === task.id}
+                onClick={() => handleDrawerTaskClick(task.id)}
               >
                 <div className="task-card-top drawer-task-top">
                   <div>
@@ -371,7 +400,37 @@ export function MainWorkspacePage() {
                       <strong>{task.title}</strong>
                     </div>
                   </div>
-                  <span className="task-card-grip drawer-task-grip" aria-hidden="true" />
+                  <div className="task-menu-wrap" onPointerDown={stopMenuPointer} onTouchStart={stopMenuPointer}>
+                    <button
+                      type="button"
+                      className="task-menu-button"
+                      aria-label={`${task.title} 更多操作`}
+                      aria-expanded={openDrawerMenuTaskId === task.id}
+                      onClick={(event) => {
+                        stopMenuClick(event);
+                        setOpenDrawerMenuTaskId((currentTaskId) => (currentTaskId === task.id ? null : task.id));
+                      }}
+                    >
+                      <span aria-hidden="true" />
+                      <span aria-hidden="true" />
+                      <span aria-hidden="true" />
+                    </button>
+                    {openDrawerMenuTaskId === task.id ? (
+                      <div className="task-menu" role="menu">
+                        <button
+                          type="button"
+                          className="task-menu-delete"
+                          role="menuitem"
+                          onClick={(event) => {
+                            stopMenuClick(event);
+                            void handleDeleteTask(task);
+                          }}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="task-meta-row">
                   <span className="drawer-task-deadline">截止 {task.deadline}</span>

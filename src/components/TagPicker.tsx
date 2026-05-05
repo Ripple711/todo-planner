@@ -34,25 +34,34 @@ export function TagPicker({ tags, selectedTagIds, onChange, onCreateTag }: TagPi
   return (
     <div className="tag-picker">
       <div className="tag-options">
-        {tags.map((tag) => (
-          <button
-            key={tag.id}
-            type="button"
-            className={`tag-option${selectedTagIds.includes(tag.id) ? ' selected' : ''}`}
-            style={{ '--tag-color': tag.color } as CSSProperties}
-            onClick={() => toggleTag(tag.id)}
-          >
-            {tag.name}
-          </button>
-        ))}
+        {tags.map((tag) => {
+          const isSelected = selectedTagIds.includes(tag.id);
+
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              className={`tag-option${isSelected ? ' selected' : ''}`}
+              style={{ '--tag-color': tag.color } as CSSProperties}
+              aria-pressed={isSelected}
+              aria-selected={isSelected}
+              onClick={() => toggleTag(tag.id)}
+            >
+              <span className="tag-option-check" aria-hidden="true">
+                ✓
+              </span>
+              <span>{tag.name}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="inline-create">
+      <div className="inline-create tag-create-row">
         <input
           value={newTagName}
           onChange={(event) => setNewTagName(event.target.value)}
           placeholder="新建标签"
         />
-        <button type="button" className="secondary-button" onClick={handleCreateTag}>
+        <button type="button" className="secondary-button tag-create-button" onClick={handleCreateTag}>
           新建
         </button>
       </div>

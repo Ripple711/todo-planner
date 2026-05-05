@@ -499,29 +499,89 @@ textarea {
 .tag-option,
 .tag,
 .task-meta span {
-  background: color-mix(in srgb, var(--tag-color, var(--tag-default)) 20%, #f4f8f4);
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--tag-default)) 42%, #f4f8f4);
+  background: color-mix(in srgb, var(--tag-color, var(--tag-default)) 36%, #f4f8f4);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--tag-default)) 64%, #e9efe9);
   border-radius: 999px;
-  color: var(--text-primary);
+  color: #2f3b35;
   font-size: 0.78rem;
   font-weight: 800;
   padding: 0.28rem 0.62rem;
 }
 
 .tag-option {
+  align-items: center;
+  background: color-mix(in srgb, var(--tag-color, var(--tag-default)) 14%, rgba(244, 248, 244, 0.7));
+  border-color: color-mix(in srgb, var(--tag-color, var(--tag-default)) 34%, rgba(120, 140, 126, 0.24));
   box-shadow: none;
+  color: rgba(52, 65, 58, 0.72);
+  display: inline-flex;
+  gap: 0.38rem;
+  min-height: 2.05rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.tag-option:hover {
+  background: color-mix(in srgb, var(--tag-color, var(--tag-default)) 24%, rgba(238, 244, 238, 0.76));
+  border-color: color-mix(in srgb, var(--tag-color, var(--tag-default)) 48%, rgba(120, 140, 126, 0.36));
+  color: rgba(47, 59, 53, 0.88);
+}
+
+.tag-option-check {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(120, 140, 126, 0.18);
+  border-radius: 999px;
+  color: transparent;
+  display: inline-flex;
+  font-size: 0.64rem;
+  font-weight: 900;
+  height: 1rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1rem;
 }
 
 .tag-option.selected {
-  background: color-mix(in srgb, var(--tag-color, var(--active-bg)) 62%, #eef2ee);
-  border-color: color-mix(in srgb, var(--tag-color, var(--active-bg)) 64%, #eef2ee);
-  color: var(--active-text);
+  background: color-mix(in srgb, var(--tag-color, var(--active-bg)) 48%, #dfe8dd);
+  border-color: color-mix(in srgb, var(--tag-color, var(--active-border)) 62%, #a9b8aa);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 8px 18px rgba(18, 31, 25, 0.08);
+  color: #2f3b35;
+  font-weight: 900;
+}
+
+.tag-option.selected .tag-option-check {
+  background: rgba(244, 248, 244, 0.8);
+  border-color: rgba(120, 140, 126, 0.32);
+  color: #2f3b35;
 }
 
 .inline-create {
   display: grid;
   gap: 0.55rem;
   grid-template-columns: 1fr auto;
+}
+
+.tag-create-row {
+  align-items: center;
+}
+
+.tag-create-button {
+  background: rgba(238, 245, 239, 0.76);
+  border-color: rgba(169, 184, 170, 0.6);
+  box-shadow: 0 6px 16px rgba(18, 31, 25, 0.08);
+  color: rgba(52, 65, 58, 0.76);
+  padding-inline: 1rem;
+}
+
+.tag-create-button:hover {
+  background: rgba(220, 229, 222, 0.82);
+  color: var(--active-text);
 }
 
 .task-list {
@@ -898,10 +958,42 @@ textarea {
   gap: 0.8rem;
 }
 
+.tap-schedule-hint {
+  align-items: center;
+  background: rgba(230, 236, 229, 0.7);
+  border: 1px solid rgba(143, 162, 148, 0.38);
+  border-radius: 16px;
+  color: #3f4d45;
+  display: flex;
+  font-size: 0.84rem;
+  font-weight: 800;
+  gap: 0.6rem;
+  justify-content: space-between;
+  margin: -0.2rem 0 0.85rem;
+  padding: 0.6rem 0.68rem;
+}
+
+.tap-schedule-cancel {
+  background: rgba(246, 249, 246, 0.72);
+  border: 1px solid rgba(132, 151, 138, 0.3);
+  border-radius: 999px;
+  color: #53635a;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.58rem;
+}
+
+.tap-schedule-cancel:hover {
+  background: rgba(255, 255, 255, 0.86);
+  color: #2f3b35;
+}
+
 .drawer-task {
   backface-visibility: hidden;
   contain: layout paint;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
   transition:
     box-shadow 180ms ease,
@@ -922,12 +1014,18 @@ textarea {
   opacity: 0.68;
 }
 
+.drawer-task.selected-for-schedule {
+  border-color: rgba(112, 139, 118, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 0 0 2px rgba(151, 172, 156, 0.34),
+    0 18px 40px rgba(18, 31, 25, 0.12);
+}
+
 .drawer-task:active {
-  cursor: grabbing;
   transform: translateY(1px);
 }
 
-.drawer-task.is-dragging,
 .planner-task-dragging .drawer-task:hover {
   background: rgba(246, 249, 246, 0.94);
   box-shadow:
@@ -943,8 +1041,8 @@ textarea {
 
 .planner-task-dragging .calendar-panel,
 .planner-task-dragging .task-pool-drawer {
-  backdrop-filter: blur(6px) saturate(94%);
-  -webkit-backdrop-filter: blur(6px) saturate(94%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 12px 30px rgba(18, 31, 25, 0.1);
@@ -953,6 +1051,11 @@ textarea {
 .planner-task-dragging .fc-event,
 .planner-task-dragging .fc-highlight {
   transition: none !important;
+}
+
+.planner-task-dragging .fc-event {
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .drawer-task-top > div {
@@ -1096,6 +1199,18 @@ textarea {
   background: var(--timegrid-highlight-bg);
 }
 
+.workspace-page.scheduling-task .fc-daygrid-day,
+.workspace-page.scheduling-task .fc-timegrid-slot-lane,
+.workspace-page.scheduling-task .fc-timegrid-col-events,
+.workspace-page.scheduling-task .fc-timegrid-axis {
+  cursor: pointer;
+}
+
+.workspace-page.scheduling-task .fc-daygrid-day:hover,
+.workspace-page.scheduling-task .fc-timegrid-slot-lane:hover {
+  background: rgba(215, 226, 216, 0.44);
+}
+
 .fc .fc-event {
   border-radius: 12px;
   box-shadow: none;
@@ -1186,6 +1301,23 @@ textarea {
 .time-event-content span {
   color: var(--text-secondary);
   font-size: 0.78rem;
+}
+
+.fc .fc-timegrid-event .fc-event-resizer-end {
+  cursor: ns-resize;
+  height: 14px;
+}
+
+.fc .fc-timegrid-event .fc-event-resizer-end::before {
+  background: rgba(52, 65, 58, 0.34);
+  border-radius: 999px;
+  bottom: 3px;
+  content: "";
+  height: 3px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 24px;
 }
 
 .deadline-highlight {
