@@ -1058,6 +1058,12 @@ textarea {
   filter: none !important;
 }
 
+body.is-touch-dragging {
+  overscroll-behavior: none;
+  overflow: hidden;
+  touch-action: none;
+}
+
 .drawer-task-top > div {
   display: grid;
   gap: 0.28rem;
@@ -1212,11 +1218,23 @@ textarea {
 }
 
 .fc .fc-event {
+  backface-visibility: hidden;
   border-radius: 12px;
   box-shadow: none;
   color: var(--text-primary);
+  contain: layout paint;
   overflow: hidden;
   padding: 0.08rem 0.18rem;
+  transform: translateZ(0);
+}
+
+.fc .calendar-event-selected {
+  background: color-mix(in srgb, var(--event-color, var(--tag-default)) 36%, rgba(230, 238, 229, 0.92)) !important;
+  border-color: rgba(92, 116, 98, 0.72) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    0 0 0 2px rgba(135, 158, 139, 0.38),
+    0 10px 20px rgba(18, 31, 25, 0.12) !important;
 }
 
 .fc .fc-daygrid-event {
@@ -1289,6 +1307,11 @@ textarea {
   line-height: 1.25;
   overflow: hidden;
   padding: 0.12rem 0.16rem;
+  position: relative;
+}
+
+.calendar-event-selected .time-event-content {
+  padding: 0.12rem 1.9rem 1.65rem 0.16rem;
 }
 
 .time-event-content strong,
@@ -1303,21 +1326,106 @@ textarea {
   font-size: 0.78rem;
 }
 
+.time-event-drag-handle {
+  align-items: center;
+  background: rgba(238, 244, 238, 0.82);
+  border: 1px solid rgba(104, 125, 110, 0.36);
+  border-radius: 999px;
+  color: rgba(52, 65, 58, 0.78);
+  cursor: grab;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 1.35rem;
+  justify-content: center;
+  letter-spacing: -0.15em;
+  line-height: 1;
+  padding-right: 0.12rem;
+  position: absolute;
+  right: 0.22rem;
+  top: 0.18rem;
+  touch-action: none;
+  width: 1.35rem;
+  z-index: 2;
+}
+
+.time-event-drag-handle:active {
+  cursor: grabbing;
+}
+
+.time-event-unschedule-button,
+.time-event-arrange-hint {
+  align-items: center;
+  background: rgba(231, 238, 231, 0.86);
+  border: 1px solid rgba(104, 125, 110, 0.28);
+  border-radius: 999px;
+  bottom: 0.16rem;
+  color: rgba(52, 65, 58, 0.82);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 900;
+  justify-content: center;
+  line-height: 1;
+  padding: 0.26rem 0.48rem;
+  position: absolute;
+  right: 0.18rem;
+  z-index: 2;
+}
+
+.time-event-unschedule-button {
+  cursor: pointer;
+}
+
+.time-event-unschedule-button:hover {
+  background: rgba(244, 248, 244, 0.94);
+  color: #2f3b35;
+}
+
+.time-event-arrange-hint {
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .fc .fc-timegrid-event {
+    touch-action: pan-y;
+  }
+
+  .time-event-drag-handle {
+    height: 1.65rem;
+    right: 0.16rem;
+    top: 0.16rem;
+    width: 1.65rem;
+  }
+
+  .time-event-unschedule-button,
+  .time-event-arrange-hint {
+    font-size: 0.72rem;
+    min-height: 1.35rem;
+    padding-inline: 0.58rem;
+  }
+}
+
 .fc .fc-timegrid-event .fc-event-resizer-end {
   cursor: ns-resize;
-  height: 14px;
+  height: 18px;
+  opacity: 0;
+  touch-action: none;
+}
+
+.fc .fc-timegrid-event.calendar-event-selected .fc-event-resizer-end {
+  opacity: 0.95;
 }
 
 .fc .fc-timegrid-event .fc-event-resizer-end::before {
   background: rgba(52, 65, 58, 0.34);
   border-radius: 999px;
-  bottom: 3px;
+  bottom: 4px;
   content: "";
-  height: 3px;
+  height: 4px;
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: 24px;
+  width: 28px;
 }
 
 .deadline-highlight {

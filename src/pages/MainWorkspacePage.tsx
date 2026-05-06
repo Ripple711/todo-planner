@@ -5,7 +5,14 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
-import type { EventContentArg, EventDropArg, MoreLinkArg, MoreLinkSimpleAction } from '@fullcalendar/core';
+import type {
+  EventClickArg,
+  EventContentArg,
+  EventDropArg,
+  EventMountArg,
+  MoreLinkArg,
+  MoreLinkSimpleAction,
+} from '@fullcalendar/core';
 import type { DateClickArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import { ProgressBar } from '../components/ProgressBar';
 import { usePlannerData } from '../hooks/usePlannerData';
@@ -53,8 +60,20 @@ const calendarViews = [
 type CalendarViewId = (typeof calendarViews)[number]['id'];
 
 function setPlannerDragPerformanceMode(isActive: boolean) {
+  if (document.body.classList.contains('planner-task-dragging') === isActive) {
+    return;
+  }
+
   document.body.classList.toggle('planner-task-dragging', isActive);
   window.dispatchEvent(new CustomEvent(isActive ? 'planner-task-drag-start' : 'planner-task-drag-end'));
+}
+
+function setTouchDragLock(isActive: boolean) {
+  if (document.body.classList.contains('is-touch-dragging') === isActive) {
+    return;
+  }
+
+  document.body.classList.toggle('is-touch-dragging', isActive);
 }
 
 export function MainWorkspacePage() {
@@ -66,18 +85,24 @@ export function MainWorkspacePage() {
     isLoading,
     createScheduleBlock,
     updateScheduleBlockTime,
+    moveScheduleBlockToUnscheduled,
     deleteTask,
   } = usePlannerData();
   const calendarRef = useRef<FullCalendar | null>(null);
   const schedulingRef = useRef<string | null>(null);
+  const eventCleanupRef = useRef(new WeakMap<HTMLElement, () => void>());
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedScheduleBlockId, setSelectedScheduleBlockId] = useState<string | null>(null);
   const [openDrawerMenuTaskId, setOpenDrawerMenuTaskId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<CalendarViewId>('dayGridMonth');
 
   const sortedUnfinishedTasks = useMemo(() => sortTasksByDeadline(unfinishedTasks), [unfinishedTasks]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
   const selectedTask = selectedTaskId ? taskById.get(selectedTaskId) : undefined;
+  const selectedScheduleBlock = selectedScheduleBlockId
+    ? scheduleBlocks.find((block) => block.id === selectedScheduleBlockId)
+    : undefined;
 
   const events = useMemo(
     () =>
@@ -106,6 +131,7 @@ export function MainWorkspacePage() {
   );
 
   function handleDrawerTaskClick(taskId: string) {
+    setSelectedScheduleBlockId(null);
     setSelectedTaskId((currentTaskId) => (currentTaskId === taskId ? null : taskId));
   }
 
@@ -131,6 +157,10 @@ export function MainWorkspacePage() {
       setSelectedTaskId(null);
     }
 
+    if (selectedScheduleBlock?.taskId === task.id) {
+      setSelectedScheduleBlockId(null);
+    }
+
     await deleteTask(task.id);
   }
 
@@ -149,6 +179,7 @@ export function MainWorkspacePage() {
       info.event.endStr || fallbackEnd,
       info.event.allDay,
     );
+    setSelectedScheduleBlockId(info.event.id);
   }
 
   async function handleEventResize(info: EventResizeDoneArg) {
@@ -162,6 +193,7 @@ export function MainWorkspacePage() {
       info.event.endStr || undefined,
       info.event.allDay,
     );
+    setSelectedScheduleBlockId(info.event.id);
   }
 
   async function scheduleSelectedTaskForDate(dateStr: string, shouldOpenDay = false) {
@@ -215,6 +247,18 @@ export function MainWorkspacePage() {
   }
 
   async function handleDateClick(info: DateClickArg) {
+    if (selectedScheduleBlock?.allDay && !info.allDay && info.view.type !== 'dayGridMonth') {
+      const task = taskById.get(selectedScheduleBlock.taskId);
+      await updateScheduleBlockTime(
+        selectedScheduleBlock.id,
+        info.dateStr,
+        addMinutes(info.date, task?.estimatedMinutes ?? 60),
+        false,
+      );
+      setSelectedScheduleBlockId(selectedScheduleBlock.id);
+      return;
+    }
+
     if (selectedTaskId) {
       if (info.view.type === 'dayGridMonth' || info.allDay) {
         await scheduleSelectedTaskForDate(info.dateStr, info.view.type === 'dayGridMonth');
@@ -241,10 +285,80 @@ export function MainWorkspacePage() {
     setCurrentView(viewId);
   }
 
+  function handleEventClick(info: EventClickArg) {
+    info.jsEvent.preventDefault();
+    info.jsEvent.stopPropagation();
+    setSelectedTaskId(null);
+    setSelectedScheduleBlockId((currentBlockId) => (currentBlockId === info.event.id ? null : info.event.id));
+  }
+
+  function getEventClassNames(info: { event: { id: string } }) {
+    return info.event.id === selectedScheduleBlockId ? ['calendar-event-selected'] : [];
+  }
+
+  async function moveSelectedScheduleBlockToUnscheduled(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!selectedScheduleBlock || selectedScheduleBlock.allDay) {
+      return;
+    }
+
+    await moveScheduleBlockToUnscheduled(selectedScheduleBlock.id, selectedScheduleBlock.plannedDate);
+    setSelectedScheduleBlockId(selectedScheduleBlock.id);
+  }
+
+  function handleEventDidMount(info: EventMountArg) {
+    if (info.event.allDay) {
+      return;
+    }
+
+    const eventElement = info.el;
+    const onPointerDownCapture = (event: globalThis.PointerEvent) => {
+      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      const startedFromMoveHandle = Boolean(target.closest('.time-event-drag-handle'));
+      const startedFromResizeHandle = Boolean(target.closest('.fc-event-resizer, .fc-event-resizer-end'));
+      const isSelected = eventElement.classList.contains('calendar-event-selected');
+
+      if (!isSelected || (!startedFromMoveHandle && !startedFromResizeHandle)) {
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      const preventScroll = (touchEvent: globalThis.TouchEvent) => touchEvent.preventDefault();
+      setTouchDragLock(true);
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+
+      const release = () => {
+        setTouchDragLock(false);
+        window.removeEventListener('touchmove', preventScroll);
+      };
+
+      window.addEventListener('pointerup', release, { once: true });
+      window.addEventListener('pointercancel', release, { once: true });
+    };
+
+    eventElement.addEventListener('pointerdown', onPointerDownCapture, true);
+    eventCleanupRef.current.set(eventElement, () => {
+      eventElement.removeEventListener('pointerdown', onPointerDownCapture, true);
+    });
+  }
+
+  function handleEventWillUnmount(info: EventMountArg) {
+    const cleanup = eventCleanupRef.current.get(info.el);
+    cleanup?.();
+    eventCleanupRef.current.delete(info.el);
+  }
+
   function renderEventContent(info: EventContentArg) {
     const task = taskById.get(info.event.extendedProps.taskId as string);
     const eventColor = info.event.extendedProps.colorBase as string | undefined;
     const eventStyle = { '--event-color': eventColor } as CSSProperties;
+    const isSelected = info.event.id === selectedScheduleBlockId;
 
     if (info.view.type === 'dayGridMonth') {
       return (
@@ -258,6 +372,21 @@ export function MainWorkspacePage() {
 
     return (
       <div className="time-event-content" style={eventStyle}>
+        {isSelected && !info.event.allDay ? (
+          <>
+            <span className="time-event-drag-handle" aria-label="拖动日程" role="button" title="拖动日程">
+              ⋮⋮
+            </span>
+            <button
+              type="button"
+              className="time-event-unschedule-button"
+              onClick={(event) => void moveSelectedScheduleBlockToUnscheduled(event)}
+            >
+              移回未安排
+            </button>
+          </>
+        ) : null}
+        {isSelected && info.event.allDay ? <span className="time-event-arrange-hint">点击时间格安排</span> : null}
         <strong>{info.event.title}</strong>
         <span>
           {info.timeText || '未安排具体时间'}
@@ -339,16 +468,31 @@ export function MainWorkspacePage() {
               }
               dayMaxEvents={3}
               displayEventTime
+              dragScroll={false}
               editable
+              eventAllow={(dropInfo, draggedEvent) =>
+                draggedEvent?.id === selectedScheduleBlockId && !draggedEvent.allDay && !dropInfo.allDay
+              }
+              eventClassNames={getEventClassNames}
+              eventClick={handleEventClick}
+              eventDragMinDistance={8}
               eventResizableFromStart
               events={events}
               eventContent={renderEventContent}
+              eventDidMount={handleEventDidMount}
+              eventWillUnmount={handleEventWillUnmount}
               eventDrop={(info) => void handleEventDrop(info)}
               eventDragStart={() => setPlannerDragPerformanceMode(true)}
-              eventDragStop={() => setPlannerDragPerformanceMode(false)}
+              eventDragStop={() => {
+                setPlannerDragPerformanceMode(false);
+                setTouchDragLock(false);
+              }}
               eventResize={(info) => void handleEventResize(info)}
               eventResizeStart={() => setPlannerDragPerformanceMode(true)}
-              eventResizeStop={() => setPlannerDragPerformanceMode(false)}
+              eventResizeStop={() => {
+                setPlannerDragPerformanceMode(false);
+                setTouchDragLock(false);
+              }}
               datesSet={(info) => setCurrentView(info.view.type as CalendarViewId)}
               height="auto"
               moreLinkClick={handleMoreLinkClick}

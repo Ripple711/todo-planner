@@ -24,6 +24,7 @@ type PlannerData = {
   createTag: (name: string) => Promise<Tag>;
   createScheduleBlock: (taskId: string, plannedDate: string, start?: string, end?: string) => Promise<void>;
   updateScheduleBlockTime: (blockId: string, start: string, end?: string, allDay?: boolean) => Promise<void>;
+  moveScheduleBlockToUnscheduled: (blockId: string, plannedDate: string) => Promise<void>;
   updateTaskProgress: (taskId: string, percent: number) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 };
@@ -141,6 +142,23 @@ export function usePlannerData(): PlannerData {
     await saveScheduleBlocks(nextBlocks);
   }
 
+  async function moveScheduleBlockToUnscheduled(blockId: string, plannedDate: string) {
+    const nextBlocks = scheduleBlocks.map((block) =>
+      block.id === blockId
+        ? {
+            ...block,
+            plannedDate,
+            start: undefined,
+            end: undefined,
+            allDay: true,
+          }
+        : block,
+    );
+
+    setScheduleBlocks(nextBlocks);
+    await saveScheduleBlocks(nextBlocks);
+  }
+
   async function updateTaskProgress(taskId: string, percent: number) {
     const safePercent = Math.min(100, Math.max(0, percent));
     const timestamp = new Date().toISOString();
@@ -194,6 +212,7 @@ export function usePlannerData(): PlannerData {
     createTag,
     createScheduleBlock,
     updateScheduleBlockTime,
+    moveScheduleBlockToUnscheduled,
     updateTaskProgress,
     deleteTask,
   };
