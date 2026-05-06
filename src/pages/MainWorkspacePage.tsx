@@ -1,11 +1,17 @@
 import { useMemo, useRef, useState } from 'react';
-import type { CSSProperties, MouseEvent, PointerEvent, TouchEvent } from 'react';
+import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
-import type { EventContentArg, EventDropArg, MoreLinkArg, MoreLinkSimpleAction } from '@fullcalendar/core';
+import type {
+  EventContentArg,
+  EventDropArg,
+  EventMountArg,
+  MoreLinkArg,
+  MoreLinkSimpleAction,
+} from '@fullcalendar/core';
 import type { DateClickArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import { ProgressBar } from '../components/ProgressBar';
 import { usePlannerData } from '../hooks/usePlannerData';
@@ -53,8 +59,20 @@ const calendarViews = [
 type CalendarViewId = (typeof calendarViews)[number]['id'];
 
 function setPlannerDragPerformanceMode(isActive: boolean) {
+  if (document.body.classList.contains('planner-task-dragging') === isActive) {
+    return;
+  }
+
   document.body.classList.toggle('planner-task-dragging', isActive);
   window.dispatchEvent(new CustomEvent(isActive ? 'planner-task-drag-start' : 'planner-task-drag-end'));
+}
+
+function setTouchDragLock(isActive: boolean) {
+  if (document.body.classList.contains('is-touch-dragging') === isActive) {
+    return;
+  }
+
+  document.body.classList.toggle('is-touch-dragging', isActive);
 }
 
 export function MainWorkspacePage() {
@@ -70,6 +88,7 @@ export function MainWorkspacePage() {
   } = usePlannerData();
   const calendarRef = useRef<FullCalendar | null>(null);
   const schedulingRef = useRef<string | null>(null);
+  const eventCleanupRef = useRef(new WeakMap<HTMLElement, () => void>());
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [openDrawerMenuTaskId, setOpenDrawerMenuTaskId] = useState<string | null>(null);
@@ -109,7 +128,7 @@ export function MainWorkspacePage() {
     setSelectedTaskId((currentTaskId) => (currentTaskId === taskId ? null : taskId));
   }
 
-  function stopMenuPointer(event: PointerEvent | TouchEvent) {
+  function stopMenuPointer(event: ReactPointerEvent | ReactTouchEvent) {
     event.stopPropagation();
   }
 
@@ -241,6 +260,51 @@ export function MainWorkspacePage() {
     setCurrentView(viewId);
   }
 
+  function handleEventDidMount(info: EventMountArg) {
+    if (info.event.allDay) {
+      return;
+    }
+
+    const eventElement = info.el;
+    const onPointerDownCapture = (event: globalThis.PointerEvent) => {
+      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      const startedFromMoveHandle = Boolean(target.closest('.time-event-drag-handle'));
+      const startedFromResizeHandle = Boolean(target.closest('.fc-event-resizer, .fc-event-resizer-end'));
+
+      if (!startedFromMoveHandle && !startedFromResizeHandle) {
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      const preventScroll = (touchEvent: globalThis.TouchEvent) => touchEvent.preventDefault();
+      setTouchDragLock(true);
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+
+      const release = () => {
+        setTouchDragLock(false);
+        window.removeEventListener('touchmove', preventScroll);
+      };
+
+      window.addEventListener('pointerup', release, { once: true });
+      window.addEventListener('pointercancel', release, { once: true });
+    };
+
+    eventElement.addEventListener('pointerdown', onPointerDownCapture, true);
+    eventCleanupRef.current.set(eventElement, () => {
+      eventElement.removeEventListener('pointerdown', onPointerDownCapture, true);
+    });
+  }
+
+  function handleEventWillUnmount(info: EventMountArg) {
+    const cleanup = eventCleanupRef.current.get(info.el);
+    cleanup?.();
+    eventCleanupRef.current.delete(info.el);
+  }
+
   function renderEventContent(info: EventContentArg) {
     const task = taskById.get(info.event.extendedProps.taskId as string);
     const eventColor = info.event.extendedProps.colorBase as string | undefined;
@@ -258,6 +322,11 @@ export function MainWorkspacePage() {
 
     return (
       <div className="time-event-content" style={eventStyle}>
+        {!info.event.allDay ? (
+          <span className="time-event-drag-handle" aria-label="拖动日程" role="button" title="拖动日程">
+            ⋮⋮
+          </span>
+        ) : null}
         <strong>{info.event.title}</strong>
         <span>
           {info.timeText || '未安排具体时间'}
@@ -339,16 +408,26 @@ export function MainWorkspacePage() {
               }
               dayMaxEvents={3}
               displayEventTime
+              dragScroll={false}
               editable
+              eventDragMinDistance={8}
               eventResizableFromStart
               events={events}
               eventContent={renderEventContent}
+              eventDidMount={handleEventDidMount}
+              eventWillUnmount={handleEventWillUnmount}
               eventDrop={(info) => void handleEventDrop(info)}
               eventDragStart={() => setPlannerDragPerformanceMode(true)}
-              eventDragStop={() => setPlannerDragPerformanceMode(false)}
+              eventDragStop={() => {
+                setPlannerDragPerformanceMode(false);
+                setTouchDragLock(false);
+              }}
               eventResize={(info) => void handleEventResize(info)}
               eventResizeStart={() => setPlannerDragPerformanceMode(true)}
-              eventResizeStop={() => setPlannerDragPerformanceMode(false)}
+              eventResizeStop={() => {
+                setPlannerDragPerformanceMode(false);
+                setTouchDragLock(false);
+              }}
               datesSet={(info) => setCurrentView(info.view.type as CalendarViewId)}
               height="auto"
               moreLinkClick={handleMoreLinkClick}
