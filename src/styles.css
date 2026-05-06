@@ -1049,27 +1049,13 @@ textarea {
 }
 
 .planner-task-dragging .fc-event,
-.planner-task-dragging .fc-highlight,
-.planner-task-dragging .fc-event-mirror {
+.planner-task-dragging .fc-highlight {
   transition: none !important;
 }
 
-.planner-task-dragging .fc-event,
-.planner-task-dragging .fc-event-mirror,
-.planner-task-dragging .fc-event-dragging,
-.planner-task-dragging .fc-event-resizing {
+.planner-task-dragging .fc-event {
   box-shadow: none !important;
   filter: none !important;
-}
-
-.planner-task-dragging .fc-highlight {
-  background: rgba(176, 194, 179, 0.22) !important;
-}
-
-body.is-touch-dragging {
-  overscroll-behavior: none;
-  overflow: hidden;
-  touch-action: none;
 }
 
 .drawer-task-top > div {
@@ -1226,15 +1212,11 @@ body.is-touch-dragging {
 }
 
 .fc .fc-event {
-  backface-visibility: hidden;
   border-radius: 12px;
   box-shadow: none;
   color: var(--text-primary);
-  contain: layout paint;
   overflow: hidden;
   padding: 0.08rem 0.18rem;
-  transform: translateZ(0);
-  will-change: transform;
 }
 
 .fc .fc-daygrid-event {
@@ -1306,8 +1288,7 @@ body.is-touch-dragging {
   gap: 0.1rem;
   line-height: 1.25;
   overflow: hidden;
-  padding: 0.12rem 1.9rem 0.12rem 0.16rem;
-  position: relative;
+  padding: 0.12rem 0.16rem;
 }
 
 .time-event-content strong,
@@ -1322,63 +1303,21 @@ body.is-touch-dragging {
   font-size: 0.78rem;
 }
 
-.time-event-drag-handle {
-  align-items: center;
-  background: rgba(238, 244, 238, 0.72);
-  border: 1px solid rgba(104, 125, 110, 0.32);
-  border-radius: 999px;
-  color: rgba(52, 65, 58, 0.72);
-  cursor: grab;
-  display: inline-flex;
-  font-size: 0.72rem;
-  font-weight: 900;
-  height: 1.35rem;
-  justify-content: center;
-  letter-spacing: -0.15em;
-  line-height: 1;
-  padding-right: 0.12rem;
-  position: absolute;
-  right: 0.22rem;
-  top: 0.18rem;
-  touch-action: none;
-  width: 1.35rem;
-  z-index: 2;
-}
-
-.time-event-drag-handle:active {
-  cursor: grabbing;
-}
-
-@media (pointer: coarse) {
-  .fc .fc-timegrid-event {
-    touch-action: pan-y;
-  }
-
-  .time-event-drag-handle {
-    height: 1.65rem;
-    right: 0.16rem;
-    top: 0.16rem;
-    width: 1.65rem;
-  }
-}
-
 .fc .fc-timegrid-event .fc-event-resizer-end {
   cursor: ns-resize;
-  height: 18px;
-  opacity: 0.9;
-  touch-action: none;
+  height: 14px;
 }
 
 .fc .fc-timegrid-event .fc-event-resizer-end::before {
   background: rgba(52, 65, 58, 0.34);
   border-radius: 999px;
-  bottom: 4px;
+  bottom: 3px;
   content: "";
-  height: 4px;
+  height: 3px;
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: 28px;
+  width: 24px;
 }
 
 .deadline-highlight {

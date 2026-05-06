@@ -146,14 +146,14 @@ export function RainShaderBackground({
     }
 
     function render(now: number) {
-      if (dragPerformanceModeRef.current && now - lastRenderTime < 80) {
+      if (dragPerformanceModeRef.current && now - lastRenderTime < 40) {
         animationFrame = window.requestAnimationFrame(render);
         return;
       }
 
       lastRenderTime = now;
       const elapsed = reducedMotion ? 0 : (now - startTime) / 1000;
-      const activeIntensity = dragPerformanceModeRef.current ? intensity * 0.44 : intensity;
+      const activeIntensity = dragPerformanceModeRef.current ? intensity * 0.52 : intensity;
       renderer.useProgram(program);
       renderer.activeTexture(renderer.TEXTURE0);
       renderer.bindTexture(renderer.TEXTURE_2D, texture);
